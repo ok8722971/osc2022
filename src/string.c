@@ -22,14 +22,6 @@ int strcmp(char *s1, char *s2) {
 	return 1;
 }
 
-int strncmp(char *s1, char *s2, int len) {
-	int i;
-	for(i = 0; i < len; ++i) {
-		if(s1[i] != s2[i]) return 0;
-	}
-	return 1;
-}
-
 void reverse_str(char *s) {
 	int i;
 	char temp;
@@ -65,98 +57,6 @@ int itoa(int x, char str[], int d){
     reverse_str(str);
     str[i] = '\0';
     return i;
-}
-
-int uitoa(unsigned int x, char str[], int d){
-	int i = 0;
-
-    while(x) {
-        str[i++] = (x % 10) + '0';
-        x = x / 10;
-    }
-  
-    // If number of digits required is more, then
-    // add 0s at the beginning
-    while(i < d)
-        str[i++] = '0';
-  
-    reverse_str(str);
-    str[i] = '\0';
-    return i;
-}
-
-void ltoa(long long x, char str[]) {
-	int i = 0;
-	// take care of negtive number
-	if(x < 0) {
-		x *= -1;
-		str[i++] = '-';
-	}
-    while(x) {
-        str[i++] = (x % 10) + '0';
-        x = x / 10;
-    }
-  
-    reverse_str(str);
-    str[i] = '\0';
-    return ;
-}
-
-void itoxstr(int x, char str[]) {
-	int i = 0;
-	while(x) {
-		int temp = x % 16;
-		if(temp > 9) {
-			str[i++] = temp - 10 + 'A';
-		}
-		else {
-			str[i++] = temp + '0';
-		}
-		x /= 16;
-	}
-	str[i++] = 'x';
-	str[i++] = '0';
-	reverse_str(str);
-	str[i] = '\0';
-	return;
-}
-
-void uitoxstr(unsigned int x, char str[]) {
-	int i = 0;
-	while(x) {
-		int temp = x % 16;
-		if(temp > 9) {
-			str[i++] = temp - 10 + 'A';
-		}
-		else {
-			str[i++] = temp + '0';
-		}
-		x /= 16;
-	}
-	str[i++] = 'x';
-	str[i++] = '0';
-	reverse_str(str);
-	str[i] = '\0';
-	return;
-}
-
-void ltoxstr(long long x, char str[]) {
-	int i = 0;
-	while(x) {
-		int temp = x % 16;
-		if(temp > 9) {
-			str[i++] = temp - 10 + 'A';
-		}
-		else {
-			str[i++] = temp + '0';
-		}
-		x /= 16;
-	}
-	str[i++] = 'x';
-	str[i++] = '0';
-	reverse_str(str);
-	str[i] = '\0';
-	return;
 }
 
 

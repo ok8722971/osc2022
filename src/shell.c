@@ -2,7 +2,6 @@
 #include "string.h"
 #include "mini_uart.h"
 #include "command.h"
-#include "dtb.h"
 
 enum ANSI_ESC {
     Unknown,
@@ -41,10 +40,8 @@ enum ANSI_ESC decode_ansi_escape() {
 
 
 void shell_init() {
-    init_dtb();
-	init_cpio();
-	// Initialize UART
-    init_uart();
+    // Initialize UART
+    uart_init();
 
     // Welcome Messages
 	uart_puts("\nSuccessful boot\n");
@@ -54,7 +51,7 @@ void shell_init() {
 }
 
 
-void shell_controller(char *cmd) {
+void shell_controller(char* cmd) {
     if (strcmp(cmd, "")) {
         return;
     }
@@ -67,24 +64,12 @@ void shell_controller(char *cmd) {
     else if (strcmp(cmd, "reboot")) {
         cmd_reboot();
     }
-	else if (strcmp(cmd, "ls")) {
-		cmd_ls();
-	}
-	else if (strcmp(cmd, "cat")) {
-		cmd_cat();
-	}
-	else if (strcmp(cmd, "test malloc")) {
-		cmd_test_malloc();
-	}
-	else if (strcmp(cmd, "test")){
-		cmd_test();
-	}
     else {
     	error_cmd_not_found(cmd);
 	}
 }
 
-void shell_input(char *cmd) {
+void shell_input(char* cmd) {
     uart_puts("\r# ");
 
     int idx = 0, end = 0, i;
@@ -148,80 +133,8 @@ void shell_input(char *cmd) {
             cmd[idx++] = c;
             cmd[++end] = '\0';
         }
-		//uart_puts("\n#");
-		//uart_puts(cmd);
-		uart_write(c);
-    }
-
-    uart_puts("\n");
-}
-
-
-void normal_input(char *cmd) {
-    int idx = 0, end = 0, i;
-    cmd[0] = '\0';
-    char c;
-    while ((c = uart_read()) != '\n') {
-        // Decode CSI key sequences
-		/*
-		By pressing one arrow key getch will push three values into the buffer:
-
-		'\033'
-		'['
-		'A', 'B', 'C' or 'D'
-		*/
-        if (c == 27) {
-            enum ANSI_ESC key = decode_ansi_escape();
-            switch (key) {
-                case CursorForward:
-                    if (idx < end) idx++;
-                    break;
-
-                case CursorBackward:
-                    if (idx > 0) idx--;
-                    break;
-
-                case Delete:
-                    // left shift command
-                    for (i = idx; i < end; i++) {
-                        cmd[i] = cmd[i + 1];
-                    }
-                    cmd[--end] = '\0';
-                    break;
-
-                case Unknown:
-                    break;
-            }
-        }
-        // CTRL-C
-        else if (c == 3) {
-            cmd[0] = '\0';
-            break;
-        }
-        // Backspace
-        else if (c == 8 || c == 127) {
-            if (idx > 0) {
-                idx--;
-                // left shift command
-                for (i = idx; i < end; i++) {
-                    cmd[i] = cmd[i + 1];
-                }
-                cmd[--end] = '\0';
-            }
-        }
-        else {
-            // right shift command
-            if (idx < end) {
-                for (i = end; i > idx; i--) {
-                    cmd[i] = cmd[i - 1];
-                }
-            }
-            cmd[idx++] = c;
-            cmd[++end] = '\0';
-        }
-		//uart_puts("\n#");
-		//uart_puts(cmd);
-		uart_write(c);
+		uart_puts("\n#");
+		uart_puts(cmd);
     }
 
     uart_puts("\n");

@@ -1,7 +1,6 @@
 SECTIONS
 {
     . = 0x80000;
-	__begin = .;
     .text :
     {
         KEEP(*(.text.boot)) /* make sure to be used */
@@ -25,8 +24,6 @@ SECTIONS
         __bss_end = .;
 
     }
-	__end = .;
 }
 
 __bss_size = (__bss_end - __bss_start) >> 3; /* same */
-/*__img_size = (__end - __begin);*/

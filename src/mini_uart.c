@@ -1,9 +1,8 @@
 #include "aux.h"
 #include "gpio.h"
 #include "mini_uart.h"
-#include "string.h"
 
-void init_uart() {
+void uart_init() {
     // GPIO alternative function selection
     // gpio14/15's alt5 is TXD1/RXD1
     // ref page 92 && 102
@@ -79,46 +78,9 @@ void uart_write(unsigned int c) {
     }
 }
 
-void uart_Wputs(char *str, int len) {
-	while(len--) {
-		uart_write(*str++);
-	}
-	uart_write('\n');
-}
-
 void uart_puts(char* str)
 {
     for (int i = 0; str[i] != '\0'; i ++) {
         uart_write((char)str[i]);
     }
-}
-
-void uart_print_int(int i) {
-	char str[128] = {0};
-	itoa(i, str, 0);
-	uart_puts(str);
-}
-
-void uart_print_uint(unsigned int i) {
-	char str[128] = {0};
-	uitoa(i, str, 0);
-	uart_puts(str);
-}
-
-void uart_print_ix(int i) {
-	char str[128] = {0};
-	itoxstr(i, str);
-	uart_puts(str);
-}
-
-void uart_print_uix(unsigned int i) {
-	char s[128] = {0};
-	uitoxstr(i, s);
-	uart_puts(s);
-}
-
-void uart_print_long(long long l) {
-	char str[128] = {0};
-	ltoxstr(l, str);
-	uart_puts(str);
 }

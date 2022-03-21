@@ -12,7 +12,7 @@ ENTRY_OBJS = $(OUT_DIR)/boot.o
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OUT_DIR)/%.o)
 
-CFLAGS = -Wall -I include -c -ffreestanding -nostdinc -nostdlib -nostartfiles -g
+CFLAGS = -Wall -I include -c -ffreestanding -nostdinc -nostdlib -nostartfiles 
 
 .PHONY: all clean asm run debug directories
 
@@ -36,11 +36,6 @@ run: all
 
 debug: all
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -S -s
-
-send: all sendimg.py
-	sudo chmod 777 /dev/ttyUSB0
-	python3 sendimg.py kernel8.img /dev/ttyUSB0
-	sudo screen /dev/ttyUSB0 115200
 
 directories: $(OUT_DIR)
 
