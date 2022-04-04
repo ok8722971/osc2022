@@ -1,0 +1,12 @@
+1.move alloc's start address to somewhere else
+2.make more automatic in boot.s for x0(devicetree)
+3.how to copy sp from el1 to el0
+
+
+memory now:
+	1.kernel : 0x80000
+	2.el2_stack : 0x80000
+	3.uart_printf : end of kernel
+	4.el1_stack : 0x60000
+	5.el0_stack : 0x40000
+	6.user_program : 0x120000
