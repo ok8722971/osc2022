@@ -29,5 +29,7 @@ SECTIONS
 }
 
 __bss_size = (__bss_end - __bss_start) >> 3; /* same */
-__user_program_start = 0x100000;
+__user_program_start = 0x20000;
+__mm_start = 0x10000000;
+__mm_end = 0x20000000;
 /*__img_size = (__end - __begin);*/

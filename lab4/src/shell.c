@@ -7,6 +7,7 @@
 #include "ramdisk.h"
 #include "irq.h"
 #include "aux.h"
+#include "mm.h"
 
 enum ANSI_ESC {
     Unknown,
@@ -49,6 +50,7 @@ void shell_init() {
     init_uart();
 	init_dtb();
 	init_cpio();
+	init_mm();
 	// Initialize UART
 
     // Welcome Messages
@@ -87,17 +89,35 @@ void shell_controller(char *cmd) {
 	else if (strcmp(cmd, "timer")) {
 		cmd_timer();
 	}
-	else if (strcmp(cmd, "test")){
-		/*long long l = 65;
-		float f = 65.65;
-		char *s = "testing";
-		uart_printf("%d %x %f %s\n", l, l, f, s);
-		*/
-		// asm volatile("svc #1");
-		char *s = "123";
-		char s2[10] = {0};
-		strcpy(s, s2);
-		uart_printf("s2:%s\n", s2);
+	else if (strcmp(cmd, "test")) {
+		*(char*)(0x1000) = 0x01;
+    	*(char*)(0x1001) = 0x23;
+    	*(char*)(0x1002) = 0x45;
+    	*(char*)(0x1003) = 0x67;
+
+    	short *ptr = (short*)0x1000;
+
+    	uart_printf("%x\n",*ptr + 1);
+    	uart_printf("%x\n", *(ptr + 1));
+	}
+	else if (strlen(cmd) > 7 && strncmp(cmd, "malloc", 6)){
+		//print_buddy_info();
+		char s[128] = {0};
+		int j = 0;
+		for(int i = 7; cmd[i] != '\0'; ++i){
+			s[j++] = cmd[i];
+		}
+		s[j] = '\0';
+		//char *str = buddy_alloc(atoi(s));
+		char *str = kmalloc(atoi(s));
+
+		str[0] = 't';
+		str[1] = 'e';
+		str[2] = 's';
+		str[3] = 't';
+		str[4] = '\0';
+		uart_printf("%s\n", str);
+
 	}
 	else if (strlen(cmd) > 13 && strncmp(cmd, "setTimeout", 10)) {
 		char s1[128] = {0};

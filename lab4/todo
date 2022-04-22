@@ -9,4 +9,4 @@ memory now:
 	3.uart_printf : end of kernel
 	4.el1_stack : 0x60000
 	5.el0_stack : 0x40000
-	6.user_program : 0x120000
+	6.user_program : 0x20000

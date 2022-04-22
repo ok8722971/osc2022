@@ -105,6 +105,12 @@ int uitoa(unsigned int x, char str[], int d){
 }
 
 void ltoa(long long x, char str[]) {
+	if(x == 0) {
+		str[0] = '0';
+		str[1] = '\0';
+		return;
+	}
+
 	int i = 0;
 	// take care of negtive number
 	if(x < 0) {
@@ -249,7 +255,7 @@ unsigned int vsprintf(char *dst, char *fmt, __builtin_va_list args) {
             if (*fmt == 'd') {
                 int arg = __builtin_va_arg(args, int);
                 char p[128] = {0};
-                itoa(arg, p, 0);
+                itoa(arg, p, 1);
 				for(int i = 0; p[i] != '\0'; ++i) {
 					*dst++ = p[i];
 				}

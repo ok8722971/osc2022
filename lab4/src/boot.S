@@ -3,7 +3,7 @@
 .global _start
 
 _start:
-    //mov	x11, x0
+    mov	x11, x0
 	mrs x1, mpidr_el1     // get processor id
     and x1, x1, #0xFF     // get lower 8 bit
     cbz x1, master        // if id is zero then goto master
@@ -30,8 +30,8 @@ master:
 from_el2_to_el1:
 	
 	//disable MMU
-    //ldr     x1, =0
-    //msr     sctlr_el1, x1
+    ldr     x1, =0
+    msr     sctlr_el1, x1
 
 	// make el0, el1 can use Floating point and Advanced SIMD
     ldr     x1, =(3 << 20)
