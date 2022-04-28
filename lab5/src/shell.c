@@ -45,7 +45,7 @@ enum ANSI_ESC decode_ansi_escape() {
 }
 
 
-void shell_init() {
+void init_shell() {
 	init_shared_variables();
     init_uart();
 	init_dtb();
@@ -54,10 +54,10 @@ void shell_init() {
 	// Initialize UART
 
     // Welcome Messages
-	uart_puts("\nSuccessful boot\n");
+	/*uart_puts("\nSuccessful boot\n");
     mbox_board_revision();
     mbox_vc_memory();
-	uart_puts("\n");
+	uart_puts("\n");*/
 }
 
 
