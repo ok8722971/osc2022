@@ -27,7 +27,7 @@ void init_task() {
 
 int privilege_task_create(void (*func)()) {
 	
-	lock();
+	//lock();
 	//uart_printf_sync("ptc l\n");
 	struct task_t *new_task;
 	for (int i = 0; i < TASK_POOL_SIZE; ++i) {
@@ -56,7 +56,7 @@ int privilege_task_create(void (*func)()) {
 	new_task->usp = new_task->ufp;
 
 	task_queue_push(&runqueue, new_task);
-	unlock();
+	//unlock();
 	return new_task->id;
 }
 
@@ -75,7 +75,7 @@ void context_switch(struct task_t* next) {
 }
 
 void schedule() {
-	lock();
+	//lock();
 	//uart_printf_sync("sche l\n");
 	struct task_t *next = task_queue_pop(&runqueue);
 	/*if(next == &task_pool[0]) {
@@ -86,7 +86,7 @@ void schedule() {
 		next = &task_pool[0];
 	}
 	context_switch(next);
-	unlock();
+	//unlock();
 }
 
 void foo(){
@@ -106,6 +106,7 @@ void foo(){
 void demo_user_program() {
 	//cpio_exec("syscall.img");
 	do_exec("syscall.img");
+
 }
 
 void init_schedule() {
@@ -137,7 +138,7 @@ void do_exec(char *fname) {
 }
 
 void do_exit(int status) {
-	lock();
+	//lock();
 	struct task_t *current = get_current_task();
     current->status = ZOMBIE;
     current->exit_status = status;
@@ -145,13 +146,13 @@ void do_exit(int status) {
 	
     // WARNING: release user stack if dynamic allocation
 	kfree(current->ustack_alloc);
-    unlock();
+    //unlock();
 	schedule();
 }
 
 void zombie_reaper() {
     while (1) {
-		lock();
+		//lock();
 		//uart_printf_sync("zr l\n");
         for (int i = 0; i < TASK_POOL_SIZE; i++) {
             if (task_pool[i].status == ZOMBIE) {
@@ -161,7 +162,7 @@ void zombie_reaper() {
 				kfree(task_pool[i].kstack_alloc);
 			}
         }
-		unlock();
+		//unlock();
 		//uart_printf_sync("zr ul\n");
 		//uart_printf("doing reaper thread\n");
         schedule();

@@ -3,7 +3,7 @@
 .global _start
 
 _start:
-    //mov	x11, x0
+    mov	x11, x0
 	mrs x1, mpidr_el1     // get processor id
     and x1, x1, #0xFF     // get lower 8 bit
     cbz x1, master        // if id is zero then goto master

@@ -53,8 +53,8 @@ void init_uart() {
 
 	enable_uart_interrupt();
 	enable_interrupt();	
-	trigger_rx_interrupt();
-	trigger_tx_interrupt();
+	//trigger_rx_interrupt();
+	//trigger_tx_interrupt();
 }
 
 // check ref 15

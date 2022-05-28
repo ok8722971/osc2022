@@ -133,8 +133,9 @@ void shell_input(char* cmd) {
             cmd[idx++] = c;
             cmd[++end] = '\0';
         }
-		uart_puts("\n#");
-		uart_puts(cmd);
+		//uart_puts("\n#");
+		//uart_puts(cmd);
+		uart_write(c);
     }
 
     uart_puts("\n");

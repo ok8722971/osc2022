@@ -98,7 +98,7 @@ void sys_exec(struct trapframe *trapframe) {
 void sys_fork(struct trapframe *trapframe) {
 	// prevent not complete yet the child get running
 	// if simply use disable interrupt will be enable in privilege_task_create
-	lock();
+	//lock();
 
 	struct task_t *parent_task = get_current_task();
 
@@ -135,7 +135,7 @@ void sys_fork(struct trapframe *trapframe) {
     child_trapframe->x[0] = 0;
 	// parent get child id
     trapframe->x[0] = child_task->id;
-	unlock();
+	//unlock();
 }
 
 void sys_exit(struct trapframe *trapframe) {
@@ -145,20 +145,20 @@ void sys_exit(struct trapframe *trapframe) {
 void sys_mbox_call(struct trapframe *trapframe) {
 	
 	// prevent multi-thread using mailbox
-	lock();
+	//lock();
 	//uart_printf_sync("s_mbox\n");
 
 	unsigned char channel = trapframe->x[0];
 	unsigned int *mbox = (unsigned int*)trapframe->x[1];
 	int success = mbox_call(mbox, channel);
 	
-	unlock();
+	//unlock();
 	trapframe->x[0] =  success;
 }
 
 void sys_kill(struct trapframe *trapframe) {
 	// prevent killing one still running
-	lock();
+	//lock();
 
 	uint64_t id = trapframe->x[0];
 	
@@ -174,7 +174,7 @@ void sys_kill(struct trapframe *trapframe) {
 	task_queue_del(&runqueue, id);
 	// schedule to prevent delete itself 
 	
-	unlock();
+	//unlock();
 	schedule();
 }
 
@@ -233,7 +233,7 @@ void sync_exc_router(unsigned long esr, unsigned long elr, struct trapframe *tra
 
 void irq_exc_router() {
 	
-	//disable_interrupt();
+	disable_interrupt();
 	//uart_printf_sync("ir\n");
 	unsigned int irq_basic_pending = *(IRQ_BASIC_PENDING);
 	unsigned int core0_int_src = *(CORE0_INTR_SRC);
@@ -248,7 +248,7 @@ void irq_exc_router() {
 		uart_printf_sync("Something wrong here. IRQ b p: 0x%x\n", irq_basic_pending);
 		while(1) {}
 	}
-	//enable_interrupt();
+	enable_interrupt();
 
 }
 
