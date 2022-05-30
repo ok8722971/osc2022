@@ -59,10 +59,17 @@ void init_uart() {
 
 // check ref 15
 char uart_read() {
-	trigger_rx_interrupt();
+	/*trigger_rx_interrupt();
     while (queue_empty(&read_buf)) asm volatile("nop");
     char c = queue_pop(&read_buf);
-    return c == '\r' ? '\n' : c;
+    return c == '\r' ? '\n' : c;*/
+	do {
+        asm volatile("nop");
+    } while (!(*AUX_MU_LSR & 0x01));
+    // Read
+    char r = (char)(*AUX_MU_IO);
+    // Convert carrige return to newline
+    return r == '\r' ? '\n' : r;
 }
 
 void uart_write(unsigned int c) {

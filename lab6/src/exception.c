@@ -14,6 +14,8 @@
 extern void return_from_fork();
 char intr_stack[INTR_STK_SIZE];
 
+int first = 1; 
+
 static unsigned long long lock_count = 0;
 
 void uart_int_handler() {
@@ -63,7 +65,7 @@ void core_timer_int_handler() {
 
 void sys_get_pid(struct trapframe *trapframe) {
     uint64_t task_id = get_current_task()->id;
-    trapframe->x[0] = task_id;
+	trapframe->x[0] = task_id;
 }
 
 void sys_uart_read(struct trapframe *trapframe) {
@@ -102,7 +104,7 @@ void sys_fork(struct trapframe *trapframe) {
 	struct task_t *parent_task = get_current_task();
 
     int child_id = privilege_task_create(return_from_fork);
-    struct task_t *child_task = &task_pool[child_id];
+	struct task_t *child_task = &task_pool[child_id];	
 
     char *child_kstack = child_task->kstack_alloc + PAGE_SIZE - 16;
     char *parent_kstack = parent_task->kstack_alloc + PAGE_SIZE - 16;
@@ -126,11 +128,11 @@ void sys_fork(struct trapframe *trapframe) {
     struct trapframe *child_trapframe = (struct trapframe*)child_task->cpu_context.sp;
     child_trapframe->sp_el0 = trapframe->sp_el0;
 
-	unlock();
 	// fork child get 0
     child_trapframe->x[0] = 0;
 	// parent get child id
     trapframe->x[0] = child_task->id;
+	unlock();
 }
 
 void sys_exit(struct trapframe *trapframe) {
@@ -189,7 +191,12 @@ void sys_kill(struct trapframe *trapframe) {
 void sys_call_router(uint64_t sys_call_num, struct trapframe* trapframe) {
 	
 	enable_interrupt();
-	lock_count = 0;
+	//lock_count = 0;
+
+	/*if(first) {
+		first = 0;
+		enable_interrupt();
+	}*/
 
 	switch (sys_call_num) {
         case SYS_GET_PID:
@@ -294,11 +301,13 @@ void irq_return() {
 void lock() {
     disable_interrupt();
     lock_count++;
+	//uart_printf_sync("l:%d\n", lock_count);
 	//uart_printf_sync("after lock, lock num:%d\n", lock_count);
 }
 
 void unlock() {
     lock_count--;
+	//uart_printf_sync("ul:%d\n", lock_count);
     if (lock_count<0)
     {
         uart_printf("lock error !!!\r\n");

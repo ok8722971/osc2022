@@ -9,7 +9,7 @@
 #define KERNEL_VIRT_BASE	0xFFFF000000000000
 #define MAX_USER_STACK_PAGE 4
 #define PAGE_MASK	~0xFFF
-#define USTACK_ADDR (0x0000fffffffff000)
+#define USTACK_ADDR (0x0000fffffffff000 - 16)
 
 #ifndef __ASSEMBLY__
 

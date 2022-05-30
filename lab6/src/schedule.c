@@ -31,7 +31,6 @@ void init_task() {
 }
 
 int privilege_task_create(void (*func)()) {
-	
 	lock();
 	//uart_printf_sync("ptc l\n");
 	struct task_t *new_task;
@@ -71,11 +70,13 @@ void context_switch(struct task_t *next) {
 	//uart_printf("1\n");
     update_current_task(next);
 	update_pgd(next->mm.pgd);
+	unlock();
     switch_to(&prev->cpu_context, &next->cpu_context);
 	//uart_printf_sync("sche ul\n");
 }
 
 void schedule() {
+	//uart_printf_sync("c");
 	lock();
 	//uart_printf_sync("sche l\n");
 	struct task_t *next = task_queue_pop(&runqueue);
@@ -87,7 +88,8 @@ void schedule() {
 		next = &task_pool[0];
 	}
 	context_switch(next);
-	unlock();
+	//uart_printf_sync("ac");
+	//unlock();
 }
 
 void demo_user_program() {
@@ -104,7 +106,7 @@ void init_schedule() {
 }
 
 void do_exec(char *fname) {
-	lock();
+	//lock();
 	struct task_t *current = get_current_task();
 	
 	char *from_addr = cpio_get_addr(fname);
@@ -117,7 +119,7 @@ void do_exec(char *fname) {
 			 ceil(fs/(float)PAGE_SIZE));
 	
 	map_page(current->mm.pgd, 
-			 USTACK_ADDR - PAGE_SIZE*MAX_USER_STACK_PAGE,
+			 USTACK_ADDR + 16 - PAGE_SIZE*MAX_USER_STACK_PAGE,
 			 MAX_USER_STACK_PAGE);
 
 /*	map_page2(current->mm.pgd,
@@ -141,7 +143,7 @@ void do_exec(char *fname) {
 
 	update_pgd(current->mm.pgd);
 	//uart_printf("hi\n");
-	unlock();
+	//unlock();
     asm volatile("eret");
 }
 

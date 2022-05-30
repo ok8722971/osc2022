@@ -42,5 +42,5 @@ SECTIONS
 __bss_size = (__bss_end - __bss_start) >> 3; /* same */
 __user_program_start = 0xFFFF000001000000;
 __mm_start = 0xFFFF000010000000;
-__mm_end = 0xFFFF000020000000;
+__mm_end = 0xFFFF00001FFFFFFFF;
 /*__img_size = (__end - __begin);*/
