@@ -183,10 +183,11 @@ void sys_kill(struct trapframe *trapframe) {
 	// schedule to prevent delete itself 
 	
 	unlock();
-	schedule();
+	//schedule();
 }
 
 void sys_call_router(uint64_t sys_call_num, struct trapframe* trapframe) {
+	
 	enable_interrupt();
 	lock_count = 0;
 

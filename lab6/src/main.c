@@ -26,7 +26,9 @@ int main() {
 	}*/
 
 	while(1) {
-        for (int i = 0; i < TASK_POOL_SIZE; i++) {
+        /*
+		lock();
+		for (int i = 0; i < TASK_POOL_SIZE; i++) {
             if (task_pool[i].status == ZOMBIE) {
 				//uart_printf("reaper %d!\n", i);
                 //task_pool[i].status = EXIT;
@@ -34,6 +36,8 @@ int main() {
 				kfree(task_pool[i].kstack_alloc);
 			}
         }
+		unlock();
+		*/
 		schedule();
 		//uart_printf_sync("doing idle thread\n");
 	}

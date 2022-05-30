@@ -71,9 +71,7 @@ void context_switch(struct task_t *next) {
 	//uart_printf("1\n");
     update_current_task(next);
 	update_pgd(next->mm.pgd);
-	unlock();
     switch_to(&prev->cpu_context, &next->cpu_context);
-	//uart_printf("cw end~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 	//uart_printf_sync("sche ul\n");
 }
 
@@ -88,30 +86,11 @@ void schedule() {
 		//uart_printf("idle\n");
 		next = &task_pool[0];
 	}
-	unlock();
 	context_switch(next);
-}
-
-void foo(){
-	struct task_t *t = get_current_task();
-	uart_printf("foo_start\n");
-    for(int i = 0; i < 3; ++i) {
-        uart_printf("Thread id: %d %d\n", t->id, i);
-		delay(100000000);
-        //schedule();
-    }
-	
-	uart_printf("end\n");
-	t->status = EXIT;
-	//schedule();
+	unlock();
 }
 
 void demo_user_program() {
-	//cpio_exec("syscall.img");
-	
-	/*while(1){
-		uart_printf("?\n");
-	}*/
 	do_exec("vm.img");
 }
 
@@ -119,15 +98,13 @@ void init_schedule() {
     init_task_queue(&runqueue);
 	
     core_timer_enable();
-	/*for(int i = 0; i < 3; ++i) { // N should > 2
-        privilege_task_create(foo);
-    }*/
+	
 	//privilege_task_create(zombie_reaper);
 	privilege_task_create(demo_user_program);
-	//uart_printf("123\n");
 }
 
 void do_exec(char *fname) {
+	lock();
 	struct task_t *current = get_current_task();
 	
 	char *from_addr = cpio_get_addr(fname);
@@ -164,6 +141,7 @@ void do_exec(char *fname) {
 
 	update_pgd(current->mm.pgd);
 	//uart_printf("hi\n");
+	unlock();
     asm volatile("eret");
 }
 
