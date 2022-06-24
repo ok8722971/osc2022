@@ -1,0 +1,1 @@
+initramfs INIT.CPI 0x20000000

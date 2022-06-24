@@ -288,8 +288,7 @@ int sd_mount() {
 
         // fill internal data of mount node
         struct fat32_internal* root_internal = (struct fat32_internal*)kmalloc(sizeof(struct fat32_internal));
-        root_internal->first_cluster = boot_sector->root_dir_start_cluster_num;
-        
+        root_internal->first_cluster = boot_sector->root_dir_start_cluster_num;        
 		
 		mount_dir->internal = root_internal;
     }

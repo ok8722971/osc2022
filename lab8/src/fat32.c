@@ -4,12 +4,15 @@
 #include "sd_driver.h"
 #include "mini_uart.h"
 #include "vfs.h"
+#include "list.h"
 #include "tmpfs.h"
 
 struct fat32_metadata fat32_metadata;
 
 struct vnode_operations* fat32_v_ops = 0;
 struct file_operations* fat32_f_ops = 0;
+
+
 
 static uint32_t get_cluster_blk_idx(uint32_t cluster_idx) {
     return fat32_metadata.data_region_blk_idx +
@@ -18,6 +21,24 @@ static uint32_t get_cluster_blk_idx(uint32_t cluster_idx) {
 
 static uint32_t get_fat_blk_idx(uint32_t cluster_idx) {
     return fat32_metadata.fat_region_blk_idx + (cluster_idx / FAT_ENTRY_PER_BLOCK);
+}
+
+static uint32_t find_empty_cluster() {
+	//find available cluster on FAT table
+	int FAT[FAT_ENTRY_PER_BLOCK];
+	uint32_t iter_cluster = fat32_metadata.first_cluster;
+	readblock(get_fat_blk_idx(iter_cluster), FAT);
+	while(1){
+		if(iter_cluster % FAT_ENTRY_PER_BLOCK == 0) readblock(get_fat_blk_idx(iter_cluster), FAT);
+		//uart_printf_sync("iter_cluster:%d, fat:%X\n", get_fat_blk_idx(iter_cluster), FAT[iter_cluster%FAT_ENTRY_PER_BLOCK]);
+		if(FAT[iter_cluster%FAT_ENTRY_PER_BLOCK] == 0x0){
+			uart_printf_sync("found empty cluster:%d\n", iter_cluster);
+			FAT[iter_cluster%FAT_ENTRY_PER_BLOCK] = EOC;
+			break;
+		}
+		iter_cluster++;
+	}
+	return iter_cluster;
 }
 
 struct vnode* fat32_create_vnode(struct dentry* dentry) {
@@ -30,11 +51,13 @@ struct vnode* fat32_create_vnode(struct dentry* dentry) {
 
 struct dentry* fat32_create_dentry(struct dentry* parent, const char* name, int type) {
     struct dentry* dentry = (struct dentry*)kmalloc(sizeof(struct dentry));
-    strcpy(name, dentry->name);
+	 
+	strcpy(name, dentry->name);
     dentry->parent = parent;
-    init_list_head(&dentry->list);
+	init_list_head(&dentry->list);
     init_list_head(&dentry->childs);
-    if (parent != 0) {
+    
+	if (parent != 0) {
         list_add(&dentry->list, &parent->childs);
     }
     dentry->vnode = fat32_create_vnode(dentry);
@@ -86,11 +109,9 @@ int fat32_lookup(struct vnode* dir, struct vnode** target, const char* component
 
 int fat32_create(struct vnode* dir, struct vnode** target, const char* component_name) {
 	uint8_t sector[BLOCK_SIZE];
-	struct fat32_internal *dir_internal = (struct fat32_internal *) dir->internal; //when to set dir_internal->first_cluster?? 
+	struct fat32_internal *dir_internal = (struct fat32_internal *) dir->internal;  
 	readblock(get_cluster_blk_idx(dir_internal->first_cluster), sector);
-	
-	uart_printf("fat32_create debug1 %d\n",dir_internal->first_cluster);
-	
+		
 	struct fat32_dirent *sector_dirent = (struct fat32_dirent *)sector;
 	
 	int i = 0;
@@ -116,31 +137,42 @@ int fat32_create(struct vnode* dir, struct vnode** target, const char* component
 	}
 	
 	//find available cluster on FAT table
-	int FAT[FAT_ENTRY_PER_BLOCK];
-	int found = 0;
-	uint32_t iter_cluster = fat32_metadata.first_cluster;
-	while(found != 1){
-		readblock(get_cluster_blk_idx(iter_cluster),FAT);
+	//int FAT[FAT_ENTRY_PER_BLOCK];
+	//uint32_t iter_cluster = fat32_metadata.first_cluster;
+	//uart_printf_sync("iter c:%d first fat block:%d\n", iter_cluster, get_fat_blk_idx(iter_cluster));
+	//readblock(get_fat_blk_idx(iter_cluster), FAT);
+	/*while(found != 1){
+		if(iter_cluster % FAT_ENTRY_PER_BLOCK == 0) readblock(get_fat_blk_idx(iter_cluster), FAT);
+		//uart_printf_sync("iter_cluster:%d, fat:%X\n", get_fat_blk_idx(iter_cluster), FAT[iter_cluster%FAT_ENTRY_PER_BLOCK]);
 		if(FAT[iter_cluster%FAT_ENTRY_PER_BLOCK] == 0x0){
 			found = 1;
-			sector_dirent[i].cluster_high = iter_cluster >> 16;   //??
-            sector_dirent[i].cluster_low = iter_cluster & 0xFFFF; //??
+			uart_printf_sync("found empty cluster:%d\n", iter_cluster);
+			sector_dirent[i].cluster_high = iter_cluster >> 16;  
+            sector_dirent[i].cluster_low = iter_cluster & 0xFFFF;
+			FAT[iter_cluster%FAT_ENTRY_PER_BLOCK] = EOC;
 			break;
 		}
 		iter_cluster++;
-	}
-    if (found == 0) return -1;
-    sector_dirent[i].attr = 0x20;
+	}*/
+   
+   	uint32_t empty_cluster = find_empty_cluster();
+
+	if(empty_cluster == 0) return -1;
+
+	sector_dirent[i].cluster_high = empty_cluster >> 16;  
+    sector_dirent[i].cluster_low = empty_cluster & 0xFFFF;
+
+	sector_dirent[i].attr = 0x20;
     sector_dirent[i].size = 0;
-    writeblock(get_cluster_blk_idx(dir_internal->first_cluster), sector_dirent);
-   	
-	uart_printf_sync("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"); 
 	
-    struct dentry *new_dentry = fat32_create_dentry(dir_internal, component_name, REGULAR_FILE);
+    writeblock(get_cluster_blk_idx(dir_internal->first_cluster), sector_dirent);
+	
+    struct dentry *new_dentry = fat32_create_dentry(dir->dentry, component_name, REGULAR_FILE);
     
 	struct fat32_internal* child_internal = (struct fat32_internal*)kmalloc(sizeof(struct fat32_internal));
 	child_internal->size = 0;
 	child_internal->first_cluster = (sector_dirent[i].cluster_high << 16) | (sector_dirent[i].cluster_low);
+	uart_printf_sync("first cluster:%d\n", child_internal->first_cluster);
 	child_internal->dirent_cluster = get_cluster_blk_idx(dir_internal->first_cluster);
 	
 	new_dentry->vnode->internal = (void*)child_internal;
@@ -204,6 +236,9 @@ int fat32_load_dentry(struct dentry *dir, char *component_name) {
         struct fat32_internal* child_internal = (struct fat32_internal*)kmalloc(sizeof(struct fat32_internal));
 		// first_cluster first 2 byte in 0x14 last 2 byte in 0x1a
         child_internal->first_cluster = ((sector_dirent[i].cluster_high) << 16) | (sector_dirent[i].cluster_low);
+
+		uart_printf_sync("name:%s, first_c:%d\n", filename, child_internal->first_cluster);
+
         child_internal->dirent_cluster = dirent_cluster;
         child_internal->size = sector_dirent[i].size;
         dentry->vnode->internal = child_internal;
@@ -214,13 +249,34 @@ int fat32_load_dentry(struct dentry *dir, char *component_name) {
 // file operations
 int fat32_read(struct file* file, void* buf, uint64_t len) {
     struct fat32_internal* file_node = (struct fat32_internal*)file->vnode->internal;
-    uint64_t f_pos_ori = file->f_pos;
     uint32_t current_cluster = file_node->first_cluster;
     int remain_len = len;
 	int buf_len = 0;
     int fat[FAT_ENTRY_PER_BLOCK];
-	char buf2[512];
+	int buf2[512];
+	// traversal to target cluster using f_pos
+	int remain_offset = file->f_pos;
+	
+	while (remain_offset > 0 && current_cluster >= fat32_metadata.first_cluster && current_cluster != EOC) {
+    	readblock(get_fat_blk_idx(current_cluster), fat);
+		remain_offset -= BLOCK_SIZE;
+		if (remain_offset > 0) {
+			readblock(get_fat_blk_idx(current_cluster), fat);
+			current_cluster = fat[current_cluster % FAT_ENTRY_PER_BLOCK];
+		}
+	}
 
+	// read first block	
+    int f_pos_offset = file->f_pos % BLOCK_SIZE;
+    readblock(get_cluster_blk_idx(current_cluster), buf2);
+	int temp = (len > BLOCK_SIZE) ? BLOCK_SIZE - f_pos_offset: len - f_pos_offset;
+	memcpy(buf, buf2 + f_pos_offset, temp);
+
+	remain_len -= temp;
+	current_cluster = fat[current_cluster % FAT_ENTRY_PER_BLOCK];
+
+
+	// read the complete block
     while (remain_len > 0 && current_cluster >= fat32_metadata.first_cluster && current_cluster != EOC) {
 		memzero(buf2, 512);
 		readblock(get_cluster_blk_idx(current_cluster), buf2);
@@ -229,16 +285,15 @@ int fat32_read(struct file* file, void* buf, uint64_t len) {
         buf_len += cpsize;
         remain_len -= BLOCK_SIZE;
 		
-		//uart_printf_sync("fat block:%d\n", get_fat_blk_idx(current_cluster));
-		//readblock(get_fat_blk_idx(current_cluster), fat);
-		//uart_printf_sync("next fat:%X\n", fat[current_cluster % FAT_ENTRY_PER_BLOCK]);
-
         // update cluster number from FAT
         readblock(get_fat_blk_idx(current_cluster), fat);
         current_cluster = fat[current_cluster % FAT_ENTRY_PER_BLOCK];
     }
-	
+
+
 	int res = (len > file_node->size - file->f_pos) ? file_node->size - file->f_pos : len;
+	
+	uart_printf_sync("buf:%s\nreturn:%d\n", buf, res);
 
     return res;
 }
@@ -248,13 +303,16 @@ int fat32_write(struct file* file, const void* buf, uint64_t len) {
     uint64_t f_pos_ori = file->f_pos;
     int fat[FAT_ENTRY_PER_BLOCK];
     char write_buf[BLOCK_SIZE];
+	memzero(write_buf, BLOCK_SIZE);
 
     // traversal to target cluster using f_pos
     uint32_t current_cluster = file_node->first_cluster;
+	uart_printf_sync("fc:%d, fcb:%d\n", current_cluster, get_cluster_blk_idx(current_cluster));
     int remain_offset = file->f_pos;
     
 	while (remain_offset > 0 && current_cluster >= fat32_metadata.first_cluster && current_cluster != EOC) {
-        remain_offset -= BLOCK_SIZE;
+        readblock(get_fat_blk_idx(current_cluster), fat);
+		remain_offset -= BLOCK_SIZE;
         if (remain_offset > 0) {
             readblock(get_fat_blk_idx(current_cluster), fat);
             current_cluster = fat[current_cluster % FAT_ENTRY_PER_BLOCK];
@@ -266,16 +324,26 @@ int fat32_write(struct file* file, const void* buf, uint64_t len) {
 	// read it and copy buf to bottom falf then write it back
     int buf_idx, f_pos_offset = file->f_pos % BLOCK_SIZE;
     readblock(get_cluster_blk_idx(current_cluster), write_buf);
+	uart_printf_sync("write buf has first : %s", write_buf);
     for (buf_idx = 0; buf_idx < BLOCK_SIZE - f_pos_offset && buf_idx < len; buf_idx++) {
         write_buf[buf_idx + f_pos_offset] = ((char*)buf)[buf_idx];
     }
-	
+	uart_printf_sync("write_buf:%s\n", write_buf);
     writeblock(get_cluster_blk_idx(current_cluster), write_buf);
     file->f_pos += buf_idx;
 
     // write complete block
     int remain_len = len - buf_idx;
-    while (remain_len > 0 && current_cluster >= fat32_metadata.first_cluster && current_cluster != EOC) {
+    uart_printf_sync("remain_len:%d\n", remain_len);
+
+	//readblock(get_fat_blk_idx(current_cluster), fat);
+	//fat[current_cluster % FAT_ENTRY_PER_BLOCK] = EOC;
+	
+	//readblock(get_fat_blk_idx(current_cluster), fat);
+	//current_cluster = fat[current_cluster % FAT_ENTRY_PER_BLOCK];
+	//uart_printf_sync("nc:%X\n", current_cluster);
+	while (remain_len > 0 && current_cluster >= fat32_metadata.first_cluster) {
+        uart_printf_sync("wrong2!\n");
         // write block
         writeblock(get_cluster_blk_idx(current_cluster), buf + buf_idx);
         file->f_pos += (remain_len < BLOCK_SIZE) ? remain_len : BLOCK_SIZE;
@@ -285,14 +353,17 @@ int fat32_write(struct file* file, const void* buf, uint64_t len) {
         // update cluster number from FAT
         if (remain_len > 0) {
             readblock(get_fat_blk_idx(current_cluster), fat);
-            current_cluster = fat[current_cluster % FAT_ENTRY_PER_BLOCK];
+            if(fat[current_cluster % FAT_ENTRY_PER_BLOCK] != EOC)
+				current_cluster = fat[current_cluster % FAT_ENTRY_PER_BLOCK];
+			else
+				fat[current_cluster % FAT_ENTRY_PER_BLOCK] = find_empty_cluster();
+				current_cluster = fat[current_cluster % FAT_ENTRY_PER_BLOCK];
         }
     }
 
-    // TODO: last block also need to handle remainder
+	uart_printf_sync("fpos:%d\n", file->f_pos);
 
     // update file size
-
     if (file->f_pos > file_node->size) {
         file_node->size = file->f_pos;
 
@@ -312,7 +383,6 @@ int fat32_write(struct file* file, const void* buf, uint64_t len) {
         }
         writeblock(file_node->dirent_cluster, sector);
     }
-
     return file->f_pos - f_pos_ori;
 }
 

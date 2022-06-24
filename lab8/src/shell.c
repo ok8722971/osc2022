@@ -48,7 +48,7 @@ enum ANSI_ESC decode_ansi_escape() {
 void init_shell() {
 	init_shared_variables();
     init_uart();
-	init_dtb();
+	//init_dtb();
 	init_cpio();
 	init_mm();
 	

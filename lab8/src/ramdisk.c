@@ -53,7 +53,7 @@ int memcmp(void* s1, void* s2, int n)
 char *CPIO_ADDRESS;
 
 void init_cpio() {
-	CPIO_ADDRESS = dtb_get_initrd_address(); 
+	CPIO_ADDRESS = 0xFFFF000020000000;//dtb_get_initrd_address(); 
 }
 
 /**

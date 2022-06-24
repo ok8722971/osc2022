@@ -111,6 +111,7 @@ void traversal_recursive(struct dentry *node, const char *path, struct vnode **t
         int ret = node->vnode->v_ops->load_dentry(node, target_path);
         if (ret == 0) { // load success, traversal again
             traversal_recursive(node, path, target_node, target_path);
+			uart_printf_sync("load success traversal done!\n");
         }
     }
 }
@@ -140,6 +141,7 @@ struct file *vfs_open(const char *pathname, int flags) {
     // 3. Create a new file if O_CREAT is specified in flags.
     else {
         if(flags & O_CREAT) {
+			uart_printf_sync("need create!\n");
             int res = target_dir->v_ops->create(target_dir, &target_file, target_path);
             if (res < 0) return 0; // error
             target_file->dentry->type = REGULAR_FILE;
@@ -178,7 +180,7 @@ int vfs_read(struct file *file, void *buf, uint64_t len) {
     }
     // 1. read min(len, readable file data size) byte to buf from the opened file.
     // 2. return read size or error code if an error occurs.
-   
+  
     int res = file->f_ops->read(file, buf, len);
     
     file->f_pos += res;

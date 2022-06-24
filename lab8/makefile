@@ -43,7 +43,7 @@ asm:
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -d in_asm
 
 run: $(BUILD_DIR) kernel8.img
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -dtb bcm2710-rpi-3-b-plus.dtb -initrd initramfs.cpio -serial null -serial stdio -display none -drive if=sd,file=sfn_nctuos.img,format=raw
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -initrd INIT.CPI -serial null -serial stdio -display none -drive if=sd,file=sfn_nctuos.img,format=raw
 
 debug: $(BUILD_DIR) kernel8.img
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -dtb bcm2710-rpi-3-b-plus.dtb -initrd initramfs.cpio -display none -S -s -serial null -serial stdio -drive if=sd,file=sfn_nctuos.img,format=raw
@@ -69,3 +69,16 @@ clean:
 test:
 	cd src
 	echo 'test' > test.txt
+
+m:
+	sudo losetup -fP sfn_nctuos.img
+	sudo mount -t msdos /dev/loop16p1 sd_card/
+	sudo cp FAT_R.TXT sd_card/FAT_R.TXT
+nm:
+	cp ../sfn_nctuos.img sfn_nctuos.img
+	sudo losetup -fP sfn_nctuos.img
+	sudo mount -t msdos /dev/loop16p1 sd_card/
+	sudo cp FAT_R.TXT sd_card/FAT_R.TXT
+um:
+	sudo umount sd_card/
+	sudo losetup -d /dev/loop16

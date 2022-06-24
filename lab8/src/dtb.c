@@ -100,7 +100,7 @@ char* dtb_get_initrd_address(){
 					res |= *struct_address++;
 				}
 				res |= KERNEL_VIRT_BASE;
-				//uart_printf("%X\n", res);
+				uart_printf("%X\n", res);
 				return res;
 			}
 
