@@ -237,7 +237,7 @@ int fat32_load_dentry(struct dentry *dir, char *component_name) {
 		// first_cluster first 2 byte in 0x14 last 2 byte in 0x1a
         child_internal->first_cluster = ((sector_dirent[i].cluster_high) << 16) | (sector_dirent[i].cluster_low);
 
-		uart_printf_sync("name:%s, first_c:%d\n", filename, child_internal->first_cluster);
+		//uart_printf_sync("name:%s, first_c:%d\n", filename, child_internal->first_cluster);
 
         child_internal->dirent_cluster = dirent_cluster;
         child_internal->size = sector_dirent[i].size;
@@ -324,17 +324,14 @@ int fat32_write(struct file* file, const void* buf, uint64_t len) {
 	// read it and copy buf to bottom falf then write it back
     int buf_idx, f_pos_offset = file->f_pos % BLOCK_SIZE;
     readblock(get_cluster_blk_idx(current_cluster), write_buf);
-	uart_printf_sync("write buf has first : %s", write_buf);
     for (buf_idx = 0; buf_idx < BLOCK_SIZE - f_pos_offset && buf_idx < len; buf_idx++) {
         write_buf[buf_idx + f_pos_offset] = ((char*)buf)[buf_idx];
     }
-	uart_printf_sync("write_buf:%s\n", write_buf);
     writeblock(get_cluster_blk_idx(current_cluster), write_buf);
     file->f_pos += buf_idx;
 
     // write complete block
     int remain_len = len - buf_idx;
-    uart_printf_sync("remain_len:%d\n", remain_len);
 
 	//readblock(get_fat_blk_idx(current_cluster), fat);
 	//fat[current_cluster % FAT_ENTRY_PER_BLOCK] = EOC;
